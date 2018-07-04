@@ -1,0 +1,5 @@
+/external/SDL2-2.0.8
+/SDL2.dll
+
+/x64
+*.vcxproj.user
