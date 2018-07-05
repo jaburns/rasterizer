@@ -44,7 +44,13 @@ namespace SoftRenderer
                 return (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
             }
 
-            if (Orient2D(v0, v1, v2) <= 0) return;
+            bool windCCW = Orient2D(v0, v1, v2) <= 0;
+
+            if (windCCW) {
+                var swap = v2;
+                v2 = v1;
+                v1 = swap;
+            }
 
             int minX = Math.Min(Math.Min(v0.x, v1.x), v2.x);
             int minY = Math.Min(Math.Min(v0.y, v1.y), v2.y);
@@ -59,7 +65,11 @@ namespace SoftRenderer
                     int w2 = Orient2D(v0, v1, p);
 
                     if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
-                        fill(p, GetBarycentricCoords(p.AsVector2(), v0.AsVector2(), v1.AsVector2(), v2.AsVector2()));
+                        var bcc = windCCW
+                            ? GetBarycentricCoords(p.AsVector2(), v0.AsVector2(), v2.AsVector2(), v1.AsVector2())
+                            : GetBarycentricCoords(p.AsVector2(), v0.AsVector2(), v1.AsVector2(), v2.AsVector2());
+
+                        fill(p, bcc);
                     }
                 }
             }       
