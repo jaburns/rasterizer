@@ -1,5 +1,6 @@
 /SDLWrapper/x64
 /SoftRenderer/bin
 /SoftRenderer/obj
+/packages
 /*.dll
 *.vcxproj.user
