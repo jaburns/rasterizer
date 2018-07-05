@@ -3,6 +3,13 @@
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 
+struct InputState
+{
+    int mouse_x = 0;
+    int mouse_y = 0;
+    bool left_mouse_button_down = false;
+};
+
 struct WrapperState
 {
     SDL_Window *window;
@@ -10,9 +17,13 @@ struct WrapperState
     SDL_Texture *texture;
 
     int width, height, scale;
+
+    InputState input_state;
 };
 
 static WrapperState s_state;
+
+static bool handle_event(const SDL_Event& event);
 
 DLL_EXPORT void sdlw_init(const char *title, int width, int height, int scale)
 {
@@ -38,7 +49,7 @@ DLL_EXPORT bool sdlw_flip_frame(const uint32_t *pixels)
     bool running = true;
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        running &= event.type != SDL_QUIT;
+        running &= handle_event(event);
     }
 
     SDL_RenderCopy(s_state.renderer, s_state.texture, nullptr, nullptr);
@@ -47,10 +58,43 @@ DLL_EXPORT bool sdlw_flip_frame(const uint32_t *pixels)
     return running;
 }
 
+DLL_EXPORT void sdlw_read_input_state(InputState *out)
+{
+    *out = s_state.input_state;
+}
+
 DLL_EXPORT void sdlw_quit()
 {
     SDL_DestroyTexture(s_state.texture);
     SDL_DestroyRenderer(s_state.renderer);
     SDL_DestroyWindow(s_state.window);
     SDL_Quit();
+}
+
+static bool handle_event(const SDL_Event& event)
+{
+    switch (event.type)
+    {
+        case SDL_QUIT:
+            return false;
+
+         case SDL_MOUSEBUTTONUP:
+            if (event.button.button == SDL_BUTTON_LEFT) {
+                s_state.input_state.left_mouse_button_down = false;
+            }
+            break;
+
+        case SDL_MOUSEBUTTONDOWN:
+            if (event.button.button == SDL_BUTTON_LEFT) {
+                s_state.input_state.left_mouse_button_down = true;
+            }
+            break;
+
+        case SDL_MOUSEMOTION:
+            s_state.input_state.mouse_x = event.motion.x / s_state.scale;
+            s_state.input_state.mouse_y = event.motion.y / s_state.scale;
+            break;
+    }
+
+    return true;
 }
