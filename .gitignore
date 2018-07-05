@@ -1,5 +1,3 @@
-/external/SDL2-2.0.8
-/SDL2.dll
+/SDLWrapper/x64
 
-/x64
 *.vcxproj.user
