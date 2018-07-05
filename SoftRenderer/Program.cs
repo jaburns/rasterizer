@@ -1,4 +1,7 @@
-﻿namespace SoftRenderer
+﻿using System;
+using GlmSharp;
+
+namespace SoftRenderer
 {
     static internal class Program
     {
@@ -10,10 +13,7 @@
             {
                 var program = new ProgramState();
 
-                do {
-                    program.Update(sdl.ReadInputState());
-                }
-
+                do { program.Update(); }
                 while (sdl.FlipFrame(program.GetRawPixels()));
             }
         }
@@ -24,39 +24,57 @@
         public const int WIDTH = 400;
         public const int HEIGHT = 300;
 
-        private readonly Vector2I[] clickPoints = new Vector2I[] { Vector2I.Zero, Vector2I.Zero, Vector2I.Zero };
         private readonly uint[] pixels = new uint[WIDTH * HEIGHT];
+        private readonly WavefrontObj teapot;
+        private readonly Buffer<float> depthBuffer;
 
-        private int clickPointIndex = 0;
-        private SDLWrapper.InputState previousInput;
+        private mat4 rotation = mat4.Identity;
 
-        public void Update(SDLWrapper.InputState input)
+        public ProgramState()
         {
-            if (input.leftMouseButtonDown && !previousInput.leftMouseButtonDown) {
-                OnClick(input.mousePos);
-            }
-
-            previousInput = input;
+            teapot = new WavefrontObj("Resources/teapot.obj");
+            depthBuffer = new Buffer<float>(WIDTH, HEIGHT, float.NegativeInfinity);
         }
 
-        private void OnClick(Vector2I pt)
+        public void Update()
         {
-            clickPoints[clickPointIndex] = pt;
-            clickPointIndex++;
-            clickPointIndex %= clickPoints.Length;
+            Array.Clear(pixels, 0, pixels.Length);
+            depthBuffer.Clear();
 
-            if (clickPointIndex != 0) return;
+            rotation *= mat4.RotateZ(0.03f) * mat4.RotateY(-0.005f);
 
-            Rasterization.FillTriangle(clickPoints[0], clickPoints[1], clickPoints[2], (p, bcc) => {
-                pixels[p.x + p.y * WIDTH] =
-                    ((uint)(bcc.x * 0xFF) << 16) |
-                    ((uint)(bcc.y * 0xFF) <<  8) |
-                    ((uint)(bcc.z * 0xFF));
-            });
+            for (int i = 0; i < teapot.triangles.Length; i += 3) 
+            {
+                var a = TransformVert(teapot.vertices[teapot.triangles[i  ].vertex]);
+                var b = TransformVert(teapot.vertices[teapot.triangles[i+1].vertex]);
+                var c = TransformVert(teapot.vertices[teapot.triangles[i+2].vertex]);
 
-            Rasterization.FillLine(clickPoints[0], clickPoints[1], p => pixels[p.x + p.y * WIDTH] = 0xFFFFFF);
-            Rasterization.FillLine(clickPoints[1], clickPoints[2], p => pixels[p.x + p.y * WIDTH] = 0xFFFFFF);
-            Rasterization.FillLine(clickPoints[2], clickPoints[0], p => pixels[p.x + p.y * WIDTH] = 0xFFFFFF);
+                Rasterization.FillTriangle(Project(a), Project(b), Project(c), WIDTH, HEIGHT, (p, bcc) => 
+                {
+                    var newDepth = ((bcc.x * a) + (bcc.y * b) + (bcc.z * c)).y;
+                    var oldDepth = depthBuffer[p.x, p.y];
+
+                    if (newDepth < oldDepth) return;
+
+                    depthBuffer[p.x, p.y] = newDepth;
+
+                    pixels[p.x + p.y * WIDTH] = (uint)(newDepth / 2);
+                });
+            }
+        }
+
+        private vec3 TransformVert(vec3 v) 
+        {
+            v *= 10;
+            v.z = -v.z;
+            v = (rotation * (new vec4(v, 1))).xyz;
+            v += new vec3(200, 150, 230);
+            return v;
+        }
+
+        private ivec2 Project(vec3 v)
+        {
+            return new ivec2((int)v.x, (int)v.z);
         }
 
         public uint[] GetRawPixels()

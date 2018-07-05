@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using GlmSharp;
 
 namespace SoftRenderer
 {
@@ -7,11 +8,11 @@ namespace SoftRenderer
     {
         public struct InputState
         {
-            public Vector2I mousePos;
+            public ivec2 mousePos;
             public bool leftMouseButtonDown;
 
             static public readonly InputState Zero = new InputState {
-                mousePos = Vector2I.Zero,
+                mousePos = ivec2.Zero,
                 leftMouseButtonDown = false
             };
         }
@@ -28,7 +29,7 @@ namespace SoftRenderer
             public InputState AsInputState()
             {
                 return new InputState {
-                    mousePos = new Vector2I(mouseX, mouseY),
+                    mousePos = new ivec2(mouseX, mouseY),
                     leftMouseButtonDown = leftMouseButtonDown
                 };
             }
