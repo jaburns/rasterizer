@@ -5,14 +5,33 @@ namespace SoftRenderer
 {
     public class SDLWrapper : IDisposable
     {
-        [StructLayout(LayoutKind.Sequential)]
         public struct InputState
+        {
+            public Vector2I mousePos;
+            public bool leftMouseButtonDown;
+
+            static public readonly InputState Zero = new InputState {
+                mousePos = Vector2I.Zero,
+                leftMouseButtonDown = false
+            };
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct InputStateInterop
         {
             public int mouseX;
             public int mouseY;
 
             [MarshalAs(UnmanagedType.I1)] 
             public bool leftMouseButtonDown;
+
+            public InputState AsInputState()
+            {
+                return new InputState {
+                    mousePos = new Vector2I(mouseX, mouseY),
+                    leftMouseButtonDown = leftMouseButtonDown
+                };
+            }
         }
 
         [DllImport("SDLWrapper.dll", CharSet=CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
@@ -22,7 +41,7 @@ namespace SoftRenderer
         private static extern bool sdlw_flip_frame(uint[] pixels);
 
         [DllImport("SDLWrapper.dll", CallingConvention=CallingConvention.Cdecl)]
-        private static extern void sdlw_read_input_state(out InputState inputs);
+        private static extern void sdlw_read_input_state(out InputStateInterop inputs);
 
         [DllImport("SDLWrapper.dll", CallingConvention=CallingConvention.Cdecl)]
         private static extern void sdlw_quit();
@@ -34,9 +53,9 @@ namespace SoftRenderer
 
         public InputState ReadInputState()
         {
-            InputState result;
-            sdlw_read_input_state(out result);
-            return result;
+            InputStateInterop inputs;
+            sdlw_read_input_state(out inputs);
+            return inputs.AsInputState();
         }
 
         public bool FlipFrame(uint[] pixels)
