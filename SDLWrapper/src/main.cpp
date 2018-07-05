@@ -38,7 +38,7 @@ DLL_EXPORT bool sdlw_flip_frame(const uint32_t *pixels)
     bool running = true;
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        running &= event.type == SDL_QUIT;
+        running &= event.type != SDL_QUIT;
     }
 
     SDL_RenderCopy(s_state.renderer, s_state.texture, nullptr, nullptr);
