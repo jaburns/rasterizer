@@ -15,7 +15,11 @@
     <Library Include="external\SDL2-2.0.8\lib\x64\SDL2main.lib" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\core.cpp" />
     <ClCompile Include="src\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\core.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
