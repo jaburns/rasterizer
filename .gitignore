@@ -1,4 +1,5 @@
 /SDLWrapper/x64
+/SDLWrapper/SDL2-*
 /SoftRenderer/bin
 /SoftRenderer/obj
 /packages
