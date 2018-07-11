@@ -36,32 +36,34 @@ namespace SoftRenderer
         }
 
         [DllImport("SDLWrapper.dll", CharSet=CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
-        private static extern void sdlw_init(string title, int width, int height, int scale);
+        private static extern IntPtr sdlw_create(string title, int width, int height, int scale);
 
         [DllImport("SDLWrapper.dll", CallingConvention=CallingConvention.Cdecl)]
-        private static extern bool sdlw_flip_frame(uint[] pixels);
+        private static extern bool sdlw_flip_frame(IntPtr instance, uint[] pixels);
 
         [DllImport("SDLWrapper.dll", CallingConvention=CallingConvention.Cdecl)]
-        private static extern void sdlw_read_input_state(out InputStateInterop inputs);
+        private static extern void sdlw_read_input_state(IntPtr instance, out InputStateInterop inputs);
 
         [DllImport("SDLWrapper.dll", CallingConvention=CallingConvention.Cdecl)]
-        private static extern void sdlw_quit();
+        private static extern void sdlw_delete(IntPtr instance);
+
+        private IntPtr instance = IntPtr.Zero;
 
         public SDLWrapper(string title, int width, int height, int scale)
         {
-            sdlw_init(title, width, height, scale);
+            instance = sdlw_create(title, width, height, scale);
         }
 
         public InputState ReadInputState()
         {
             InputStateInterop inputs;
-            sdlw_read_input_state(out inputs);
+            sdlw_read_input_state(instance, out inputs);
             return inputs.AsInputState();
         }
 
         public bool FlipFrame(uint[] pixels)
         {
-            return sdlw_flip_frame(pixels);
+            return sdlw_flip_frame(instance, pixels);
         }
 
     #region IDisposable Support
@@ -73,7 +75,8 @@ namespace SoftRenderer
             if (disposedValue) return;
             disposedValue = true;
 
-            sdlw_quit();
+            sdlw_delete(instance);
+            instance = IntPtr.Zero;
         }
 
         ~SDLWrapper() 
