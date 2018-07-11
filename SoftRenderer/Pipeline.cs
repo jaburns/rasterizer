@@ -1,4 +1,5 @@
 ﻿using GlmSharp;
+using System.Linq;
 
 namespace SoftRenderer
 {
@@ -28,15 +29,17 @@ namespace SoftRenderer
             this.fragmentShader = fragmentShader;
         }
 
-        public vec4[] Rasterize(T[] vertices, int[] triangles)
+        public void Rasterize(Buffer<vec4> buffer, T[] vertices, int[] triangles)
         {
+            var shaded = vertices.Select(x => vertexShader.ShadeVertex(x)).ToArray();
+
             var va = vertexShader.ShadeVertex(vertices[0]);
             var vb = vertexShader.ShadeVertex(vertices[1]);
             var vc = vertexShader.ShadeVertex(vertices[2]);
 
             var middlePixel = fragmentShader.ShadeFragment(va.Combine(vb, vc, 0.5f, 0.5f, 0.5f));
 
-            return new vec4[] { middlePixel };
+            buffer[0,0] = middlePixel;
         }
     }
 
@@ -86,6 +89,11 @@ namespace SoftRenderer
 
         public StandardShaderPipeline()
         {
+        }
+
+        public void DrawMesh(WavefrontObj obj)
+        {
+            pipeline.Rasterize(new Buffer<vec4>(0,0), obj.vertices.Select(x => new AppData()).ToArray(), obj.triangles.Select(x => x.vertex).ToArray());
         }
     }
 }

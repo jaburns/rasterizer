@@ -1,15 +1,15 @@
-﻿using System;
-using GlmSharp;
+﻿using GlmSharp;
+using System.Linq;
 
 namespace SoftRenderer
 {
     static internal class Program
     {
-        const int VIEW_SCALE = 2;
+        const int VIEW_SCALE = 1;
 
         static void Main(string[] args)
         {
-            using (var sdl = new SDLWrapper("Scope Software Renderer", ProgramState.WIDTH, ProgramState.HEIGHT, VIEW_SCALE))
+            using (var sdl = new SDLWrapper("Rasterizer", ProgramState.WIDTH, ProgramState.HEIGHT, VIEW_SCALE))
             {
                 var program = new ProgramState();
 
@@ -24,21 +24,24 @@ namespace SoftRenderer
         public const int WIDTH = 400;
         public const int HEIGHT = 300;
 
-        private readonly uint[] pixels = new uint[WIDTH * HEIGHT];
         private readonly WavefrontObj teapot;
+        private readonly Buffer<vec4> texture;
         private readonly Buffer<float> depthBuffer;
+        private readonly Buffer<uint> screenBuffer;
 
         private mat4 rotation = mat4.Identity;
 
         public ProgramState()
         {
             teapot = new WavefrontObj("Resources/teapot.obj");
+            texture = TextureReader.LoadPNG("Resources/texture.png");
+            screenBuffer = new Buffer<uint>(WIDTH, HEIGHT);
             depthBuffer = new Buffer<float>(WIDTH, HEIGHT, float.NegativeInfinity);
         }
 
         public void Update()
         {
-            Array.Clear(pixels, 0, pixels.Length);
+            screenBuffer.Clear();
             depthBuffer.Clear();
 
             rotation *= mat4.RotateZ(0.03f) * mat4.RotateY(-0.005f);
@@ -49,6 +52,10 @@ namespace SoftRenderer
                 var b = TransformVert(teapot.vertices[teapot.triangles[i+1].vertex]);
                 var c = TransformVert(teapot.vertices[teapot.triangles[i+2].vertex]);
 
+                var uv_a = teapot.uvs[teapot.triangles[i  ].uv];
+                var uv_b = teapot.uvs[teapot.triangles[i+1].uv];
+                var uv_c = teapot.uvs[teapot.triangles[i+2].uv];
+
                 Rasterization.FillTriangle(Project(a), Project(b), Project(c), WIDTH, HEIGHT, (p, bcc) => 
                 {
                     var newDepth = ((bcc.x * a) + (bcc.y * b) + (bcc.z * c)).y;
@@ -56,11 +63,19 @@ namespace SoftRenderer
 
                     if (newDepth < oldDepth) return;
 
-                    depthBuffer[p.x, p.y] = newDepth;
+                    var uv = (bcc.x * uv_a) + (bcc.y * uv_b) + (bcc.z * uv_c);
 
-                    pixels[p.x + p.y * WIDTH] = (uint)(newDepth / 2);
+                    depthBuffer[p.x, p.y] = newDepth;
+                    screenBuffer[p.x, p.y] = ColorToUint(texture.SampleUV(uv.x, uv.y, vec4.Lerp) * 0.003f*(newDepth));
                 });
             }
+        }
+
+        static uint ColorToUint(vec4 color)
+        {
+            return (uint)(0xFF*color.r) |
+                ((uint)(0xFF*color.g) << 8) |
+                ((uint)(0xFF*color.b) << 16);
         }
 
         private vec3 TransformVert(vec3 v) 
@@ -79,7 +94,7 @@ namespace SoftRenderer
 
         public uint[] GetRawPixels()
         {
-            return pixels;
+            return screenBuffer.RawPixels;
         }
     }
 }
