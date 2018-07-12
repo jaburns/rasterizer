@@ -24,15 +24,20 @@ namespace SoftRenderer
         public const int WIDTH = 400;
         public const int HEIGHT = 300;
 
+		private readonly WavefrontObj teapot;
+		private readonly Buffer<vec4> texture;
         private readonly Buffer<float> depthBuffer;
-        private readonly Buffer<uint> screenBuffer;
-
-        private readonly StandardShaderPipeline pipeline;
+        private readonly Buffer<vec4> screenBuffer;
+		private readonly IPipeline<StandardShader.AppData> pipeline;
 
         public ProgramState()
         {
-            pipeline = new StandardShaderPipeline();
-            screenBuffer = new Buffer<uint>(WIDTH, HEIGHT);
+			teapot = new WavefrontObj("Resources/teapot.obj");
+            texture = TextureReader.LoadPNG("Resources/texture.png");
+
+			pipeline = StandardShader.GetPipeline();
+
+            screenBuffer = new Buffer<vec4>(WIDTH, HEIGHT);
             depthBuffer = new Buffer<float>(WIDTH, HEIGHT, float.NegativeInfinity);
         }
 
@@ -40,12 +45,20 @@ namespace SoftRenderer
         {
             screenBuffer.Clear();
             depthBuffer.Clear();
-            pipeline.DrawMesh();
+
+			pipeline.Draw(depthBuffer, screenBuffer, teapot.GetStandardAppDataForTriangles(), teapot.triangles.Select(x => x.vertex).ToArray());
         }
 
         public uint[] GetRawPixels()
         {
-            return screenBuffer.RawPixels;
+			return screenBuffer.RawPixels.Select(ColorToUint).ToArray();
+        }
+
+		static uint ColorToUint(vec4 color)
+        {
+            return (uint)(0xFF * color.r) |
+                ((uint)(0xFF * color.g) << 8) |
+                ((uint)(0xFF * color.b) << 16);
         }
     }
 }

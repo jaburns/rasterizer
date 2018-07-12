@@ -107,5 +107,11 @@ namespace SoftRenderer
                 normal = int.Parse(indices[2]) - 1,
             };
         }
+
+		public StandardShader.AppData[] GetStandardAppDataForTriangles()
+		{
+			return null;
+            // TODO implement
+		}
     }
 }
