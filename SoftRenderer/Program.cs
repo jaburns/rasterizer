@@ -46,7 +46,12 @@ namespace SoftRenderer
             screenBuffer.Clear();
             depthBuffer.Clear();
 
-			pipeline.Draw(depthBuffer, screenBuffer, teapot.GetStandardAppDataForTriangles(), teapot.triangles.Select(x => x.vertex).ToArray());
+			pipeline.Draw(
+                depthBuffer, 
+                screenBuffer, 
+                teapot.GetStandardAppDataForTriangles(), 
+                teapot.triangles.Select(x => x.vertex).ToArray()
+            );
         }
 
         public uint[] GetRawPixels()

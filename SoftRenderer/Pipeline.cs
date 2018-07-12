@@ -88,7 +88,7 @@ namespace SoftRenderer
 			public vec2 uv;
 		}
 
-		public struct VertData : Interpolatable<VertData>, IVertexData
+		struct VertData : Interpolatable<VertData>, IVertexData
 		{
 			public vec3 position;
 			public vec3 normal;
@@ -107,7 +107,7 @@ namespace SoftRenderer
 			public vec3 ClipPos { get { return position; } }
 		}
 
-		public class VertShader : VertexShader<AppData, VertData>
+		class VertShader : VertexShader<AppData, VertData>
 		{
 			public VertData ShadeVertex(AppData d)
 			{
@@ -119,7 +119,7 @@ namespace SoftRenderer
 			}
 		}
 
-		public class FragShader : FragmentShader<VertData>
+		class FragShader : FragmentShader<VertData>
 		{
 			public vec4 ShadeFragment(VertData v)
 			{

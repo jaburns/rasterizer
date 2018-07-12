@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using GlmSharp;
 using System.Linq;
@@ -110,8 +111,18 @@ namespace SoftRenderer
 
 		public StandardShader.AppData[] GetStandardAppDataForTriangles()
 		{
-			return null;
-            // TODO implement
+            var result = new StandardShader.AppData[vertices.Length];
+
+            for (int i = 0; i < vertices.Length; ++i) {
+                result[i].position = vertices[i];
+            }
+
+            for (int i = 0; i < triangles.Length; ++i) {
+                result[triangles[i].vertex].uv = uvs[triangles[i].uv];
+                result[triangles[i].vertex].normal = normals[triangles[i].normal];
+            }
+
+            return result;
 		}
     }
 }
